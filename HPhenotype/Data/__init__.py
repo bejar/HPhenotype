@@ -13,12 +13,8 @@ __init__.py
 
 :Version: 
 
-:Created on: 10/05/2017 10:12 
+:Created on: 16/05/2017 14:04 
 
 """
 
-from .Paths import GOann, GOonto, HPHonto
-
 __author__ = 'bejar'
-
-__all__ = ['GOonto', 'GOann', 'HPHonto']
