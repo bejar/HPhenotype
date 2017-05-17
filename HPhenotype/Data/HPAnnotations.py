@@ -60,7 +60,7 @@ class HPAnnotations:
         self.inmemory = True
         afile = open(self.dfile, 'r')
 
-        afile.readline() # skip first line
+        afile.readline()  # skip first line
 
         for line in afile:
             ann = line.split()
@@ -77,8 +77,7 @@ class HPAnnotations:
             else:
                 self.PtoG[ann[-1]] = [' '.join(ann[2:-1]), [ann[1]]]
 
-
-    def save_to_db(self):
+    def save_to_database(self):
         """
         Saves the in memory structures to the database
         :return: 
@@ -88,13 +87,11 @@ class HPAnnotations:
             db = client[self.dbase[1]]
             col = db['GenToPhenotype']
             for gen in self.GtoP:
-                col.insert({'gene':gen, 'gid': self.GtoP[gen][0], 'phenotype':self.GtoP[gen][1]})
+                col.insert({'gene': gen, 'gid': self.GtoP[gen][0], 'phenotype': self.GtoP[gen][1]})
 
             col = db['PhenotypeToGen']
             for phen in self.PtoG:
-                col.insert({'phenotype': phen, 'desc': self.PtoG[phen][0], 'gene':self.PtoG[phen][1]})
-
-
+                col.insert({'phenotype': phen, 'desc': self.PtoG[phen][0], 'gene': self.PtoG[phen][1]})
 
     def load_from_database(self):
         """
@@ -102,6 +99,21 @@ class HPAnnotations:
         :return: 
         """
         self.inmemory = True
+        self.GtoP = {}
+        self.PtoG = {}
+        client = MongoClient(self.dbase[0])
+        db = client[self.dbase[1]]
+        col = db['GeneToPhenotype']
+        res = col.find({}, {'gene':1, 'gid':1, 'phenotype': 1})
+
+        for r in res:
+           self.GtoP[r['gene']] = [r['gid'], r['phenotype']]
+
+        col = db['PhenotypeToGene']
+        res = col.find({}, {'gene':1, 'desc':1, 'phenotype': 1})
+        for r in res:
+           self.PtoG[r['phenotype']] = [r['desc'], r['gene']]
+
 
     def get_phenotypes_for_gene(self, gene):
         """
@@ -118,14 +130,18 @@ class HPAnnotations:
         else:
             client = MongoClient(self.dbase[0])
             db = client[self.dbase[1]]
-            col = db['GenToPhenotype']
-            col.find({'gene':gene}, {'phenotype':1})
+            col = db['GeneToPhenotype']
+            res = col.find_one({'gene': gene}, {'phenotype': 1})
+            if res is not None:
+                return res['phenotype']
+            else:
+                raise Exception('Invalid gene')
 
     def get_gene_for_phenotypes(self, phen):
         """
         Retrieves the list of genes associated to a phenotype
         
-        :param gene: 
+        :param phen: 
         :return: 
         """
         if self.inmemory:
@@ -136,8 +152,44 @@ class HPAnnotations:
         else:
             client = MongoClient(self.dbase[0])
             db = client[self.dbase[1]]
-            col = db['PhenotypeToGen']
-            col.find({'phenotype':phen}, {'gene':1})
+            col = db['PhenotypeToGene']
+            res = col.find_one({'phenotype': phen}, {'gene': 1})
+            if res is not None:
+                return res['gene']
+            else:
+                raise Exception('Invalid phenotype')
+
+    def exists_gene(self, gene):
+        """
+        Returns if a gene is in the datastructure
+        
+        :param gene: 
+        :return: 
+        """
+        if self.inmemory:
+            return gene in self.GtoP
+        else:
+            client = MongoClient(self.dbase[0])
+            db = client[self.dbase[1]]
+            col = db['GeneToPhenotype']
+            res = col.find_one({'gene': gene}, {'phenotype': 1})
+            return res is not None
+
+    def exists_phenotype(self, phen):
+        """
+        Returns if a phenotype is in the datastructure
+        
+        :param phen: 
+        :return: 
+        """
+        if self.inmemory:
+            return phen in self.PtoG
+        else:
+            client = MongoClient(self.dbase[0])
+            db = client[self.dbase[1]]
+            col = db['PhenotypeToGene']
+            res = col.find_one({'phenotype': phen}, {'gene': 1})
+            return res is not None
 
 
 if __name__ == '__main__':
@@ -145,5 +197,10 @@ if __name__ == '__main__':
     from HPhenotype.Private.DBConfig import mgdatabase
 
     hpa = HPAnnotations(HPann, dbase=mgdatabase)
-    hpa.load_from_file()
-    hpa.save_to_db()
+    # hpa.load_from_file()
+    # hpa.save_to_database()
+    hpa.load_from_database()
+    print len(hpa.GtoP)
+    print len(hpa.PtoG)
+    print hpa.get_phenotypes_for_gene('CREBBP')
+    print hpa.exists_gene('CREBBP')

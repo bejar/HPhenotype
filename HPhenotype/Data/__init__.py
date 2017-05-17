@@ -17,4 +17,9 @@ __init__.py
 
 """
 
+from .GOAnnotations import GOAnnotations
+from .HPAnnotations import HPAnnotations
+
 __author__ = 'bejar'
+
+__all__ = ['GOAnnotations', 'HPAnnotations']
