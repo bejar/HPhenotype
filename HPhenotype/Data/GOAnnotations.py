@@ -6,7 +6,7 @@ GOAnnotations
 
 :Description: GOAnnotations
 
-    
+    Data structure for the Genome annotations
 
 :Authors: bejar
     
@@ -64,20 +64,20 @@ class GOAnnotations:
         while line:
             ann = line.split()
             if self.hpheno and self.hpheno.exists_gene(ann[2]):
+                if 'GO' in ann[3]:
+                    if ann[2] in self.GenetoGO:
+                        self.GenetoGO[ann[2]].add(ann[3])
+                    else:
+                        self.GenetoGO[ann[2]] = set()
+                        self.GenetoGO[ann[2]].add(ann[3])
+                        print(ann[2])
+                        counte += 1
 
-                if ann[2] in self.GenetoGO:
-                    self.GenetoGO[ann[2]].add(ann[3])
-                else:
-                    self.GenetoGO[ann[2]] = set()
-                    self.GenetoGO[ann[2]].add(ann[3])
-                    print(ann[2])
-                    counte += 1
-
-                if ann[3] in self.GOtoGene:
-                    self.GOtoGene[ann[2]].add(ann[2])
-                else:
-                    self.GOtoGene[ann[2]] = set()
-                    self.GOtoGene[ann[2]].add(ann[2])
+                    if ann[3] in self.GOtoGene:
+                        self.GOtoGene[ann[3]].add(ann[2])
+                    else:
+                        self.GOtoGene[ann[3]] = set()
+                        self.GOtoGene[ann[3]].add(ann[2])
 
             line = afile.readline()
 
@@ -93,17 +93,12 @@ class GOAnnotations:
             client = MongoClient(self.dbase[0])
             db = client[self.dbase[1]]
             col = db['GeneToGO']
-            for gen in self.GtoP:
+            for gen in self.GenetoGO:
                 col.insert({'gene': gen, 'geneonto': [v for v in self.GenetoGO[gen]]})
 
             col = db['GOToGene']
-            for go in self.GtoP:
+            for go in self.GOtoGene:
                 col.insert({'geneonto': go, 'gene': [v for v in self.GOtoGene[go]]})
-
-
-
-
-
 
 
 if __name__ == '__main__':

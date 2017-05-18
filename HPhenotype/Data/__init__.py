@@ -19,7 +19,10 @@ __init__.py
 
 from .GOAnnotations import GOAnnotations
 from .HPAnnotations import HPAnnotations
+from .GOntology import GOntology
+from .HPOntology import HPOntology
+from .BioOntology import BioOntology
 
 __author__ = 'bejar'
 
-__all__ = ['GOAnnotations', 'HPAnnotations']
+__all__ = ['GOAnnotations', 'HPAnnotations', 'GOntology', 'HPOntology', 'BioOntology']

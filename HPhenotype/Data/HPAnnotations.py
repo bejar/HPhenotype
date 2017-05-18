@@ -6,7 +6,7 @@ Annotations
 
 :Description: Annotations
 
-    
+    Data structure for the Human Phenotype annotations
 
 :Authors: bejar
     
