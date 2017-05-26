@@ -36,7 +36,7 @@ class HPAnnotations:
     PtoG = None
     dfile = None
     dbase = None
-    inmemory = None
+    inmemory = False
 
     def __init__(self, dfile, dbase=None, inmemory=False):
         """
@@ -191,6 +191,23 @@ class HPAnnotations:
             res = col.find_one({'phenotype': phen}, {'gene': 1})
             return res is not None
 
+    def statistics(self):
+        """
+        Some statistics about the number of arcs
+        :return: 
+        """
+        if self.inmemory:
+            nconnG = 0
+            for g in self.PtoG:
+                nconnG += len(self.PtoG[g][1])
+            print 'num links = %d' % nconnG
+            print 'Phenotype mean links = %3.2f' % (nconnG/float(len(self.PtoG)))
+
+            nconnP = 0
+            for g in self.GtoP:
+                nconnP += len(self.GtoP[g][1])
+
+            print 'Gene mean links = %3.2f' % (nconnP/float(len(self.GtoP)))
 
 if __name__ == '__main__':
     from HPhenotype.Config.Paths import HPann
@@ -200,7 +217,8 @@ if __name__ == '__main__':
     # hpa.load_from_file()
     # hpa.save_to_database()
     hpa.load_from_database()
-    print len(hpa.GtoP)
-    print len(hpa.PtoG)
-    print hpa.get_phenotypes_for_gene('CREBBP')
-    print hpa.exists_gene('CREBBP')
+    # print len(hpa.GtoP)
+    # print len(hpa.PtoG)
+    # print hpa.get_phenotypes_for_gene('CREBBP')
+    # print hpa.exists_gene('CREBBP')
+    hpa.statistics()

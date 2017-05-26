@@ -34,25 +34,25 @@ class HPOntology(BioOntology):
     """
     
     """
-    def __init__(self):
+    def __init__(self, dbase=None, inmemory=False):
         """
         Creates the empty 
         :param pterm: 
         """
-        BioOntology.__init__(self, HPHonto, pheno_abno_c)
+        BioOntology.__init__(self, HPHonto, pheno_abno_c, dbase=dbase, inmemory=inmemory)
 
     def check_annotations(self):
         """
-        Checks if the tems in the Phenotype ontology exist in the Phenotype Annotations
+        Checks if the terms in the Phenotype ontology exist in the Phenotype Annotations
         Terms in the onlology have an underscore as separator, annotations use a colon
         :return: 
         """
         hpa = HPAnnotations(HPann, dbase=mgdatabase)
         cpos = 0
         cneg = 0
-        for d in self.descendants:
-            if hpa.exists_phenotype(d.replace('_', ':')):
-                print '+', d
+        for d in self.down:
+            if hpa.exists_phenotype(d):
+                print '+', d, self.terms_info[d].level
                 cpos += 1
             else:
                 print '-', d
@@ -63,4 +63,5 @@ class HPOntology(BioOntology):
 if __name__ == '__main__':
     o = HPOntology()
     o.load_from_file()
+    o.compute_level()
     o.check_annotations()

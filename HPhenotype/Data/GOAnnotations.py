@@ -34,6 +34,7 @@ class GOAnnotations:
     GOtoGene = None
     hpheno = False
     inmemory = False
+    dbase = None
 
     def __init__(self, dfile, dbase=None, inmemory=False, hpsel=None):
         """
@@ -56,7 +57,7 @@ class GOAnnotations:
         self.inmemory = True
         afile = open(self.dfile, 'r')
 
-        line = afile.readline()  # skip first line
+        line = afile.readline()  # skip comment lines
         while line[0] == '!':
             line = afile.readline()
 
@@ -70,7 +71,7 @@ class GOAnnotations:
                     else:
                         self.GenetoGO[ann[2]] = set()
                         self.GenetoGO[ann[2]].add(ann[3])
-                        print(ann[2])
+                        # print(ann[2])
                         counte += 1
 
                     if ann[3] in self.GOtoGene:
@@ -82,6 +83,28 @@ class GOAnnotations:
             line = afile.readline()
 
         print counte
+
+    def load_from_database(self):
+        """
+        Loads the data from the database to memory
+        :return: 
+        """
+        self.inmemory = True
+        self.GenetoGO = {}
+        self.GOtoGene = {}
+        client = MongoClient(self.dbase[0])
+        db = client[self.dbase[1]]
+        col = db['GeneToGO']
+        res = col.find({}, {'gene':1, 'geneonto': 1})
+
+        for r in res:
+           self.GenetoGO[r['gene']] = r['geneonto']
+
+        col = db['GOToGene']
+        res = col.find({}, {'geneonto':1, 'desc':1, 'gene': 1})
+        for r in res:
+           self.GOtoGene[r['geneonto']] = r['gene']
+
 
     def save_to_database(self):
         """
@@ -100,6 +123,35 @@ class GOAnnotations:
             for go in self.GOtoGene:
                 col.insert({'geneonto': go, 'gene': [v for v in self.GOtoGene[go]]})
 
+    def exists_geneonto(self, gene):
+        """
+        Returns if a gene is in the datastructure
+        
+        :param gene: 
+        :return: 
+        """
+        if self.inmemory:
+            return gene in self.GenetoGO
+        else:
+            client = MongoClient(self.dbase[0])
+            db = client[self.dbase[1]]
+            col = db['GOToGene']
+            res = col.find_one({'geneonto': gene}, {'gene': 1})
+            return res is not None
+
+    def statistics(self):
+        """
+        Some statistics about the number of arcs
+        :return: 
+        """
+        if self.inmemory:
+            nconn = 0
+            for g in self.GenetoGO:
+                nconn += len(self.GenetoGO[g])
+            print 'num links = %d' % nconn
+            print 'Gene mean links = %3.2f' % (nconn/float(len(self.GenetoGO)))
+            print 'GeneOnto mean links = %3.2f' % (nconn/float(len(self.GOtoGene)))
+
 
 if __name__ == '__main__':
     from HPhenotype.Config.Paths import GOann
@@ -111,6 +163,8 @@ if __name__ == '__main__':
 
     goa = GOAnnotations(GOann, dbase=mgdatabase, hpsel=hpa)
 
-    goa.load_from_file()
-    goa.save_to_database()
+    goa.load_from_database()
+    goa.statistics()
+
+    # goa.save_to_database()
     # print len(goa.GtoGO)

@@ -22,7 +22,7 @@ from .HPAnnotations import HPAnnotations
 from .GOntology import GOntology
 from .HPOntology import HPOntology
 from .BioOntology import BioOntology
-
+from .TermInfo import TermInfo
 __author__ = 'bejar'
 
-__all__ = ['GOAnnotations', 'HPAnnotations', 'GOntology', 'HPOntology', 'BioOntology']
+__all__ = ['GOAnnotations', 'HPAnnotations', 'GOntology', 'HPOntology', 'BioOntology', 'TermInfo']
