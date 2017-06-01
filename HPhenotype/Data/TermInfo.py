@@ -69,12 +69,20 @@ class TermInfo:
 
     def is_descendant(self, name):
         """
-        Checks if it is in the acendants list
+        Checks if it is in the ascendants list
 
         :param name:
         :return:
         """
         return name in self.descendants
+
+    def is_annotated(self):
+        """
+        Returns if the term is annotated
+        :param name:
+        :return:
+        """
+        return self.annotation
 
     def __str__(self):
         """

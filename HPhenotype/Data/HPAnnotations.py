@@ -135,7 +135,7 @@ class HPAnnotations:
             if res is not None:
                 return res['phenotype']
             else:
-                raise Exception('Invalid gene')
+                raise Exception('Invalid gene %s' % gene)
 
     def get_gene_for_phenotypes(self, phen):
         """
@@ -157,7 +157,7 @@ class HPAnnotations:
             if res is not None:
                 return res['gene']
             else:
-                raise Exception('Invalid phenotype')
+                raise Exception('Invalid phenotype %s' % phen)
 
     def exists_gene(self, gene):
         """

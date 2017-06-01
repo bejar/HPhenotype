@@ -139,6 +139,29 @@ class GOAnnotations:
             res = col.find_one({'geneonto': gene}, {'gene': 1})
             return res is not None
 
+
+    def get_gene_for_geneonto(self, gonto):
+        """
+        Gets the genes for the geneonto term
+        :param gonto:
+        :return:
+        """
+        if self.inmemory:
+            if gonto in self.GOtoGene:
+                return self.GOtoGene[gonto]
+            else:
+                raise NameError('No genome %s in gene annotations' % gonto)
+        else:
+            client = MongoClient(self.dbase[0])
+            db = client[self.dbase[1]]
+            col = db['GOToGene']
+            res = col.find_one({'geneonto': gonto}, {'gene': 1})
+            if res is None:
+                raise NameError('No genome %s in gene annotations' % gonto)
+            else:
+                return res['gene']
+
+
     def statistics(self):
         """
         Some statistics about the number of arcs
@@ -163,8 +186,9 @@ if __name__ == '__main__':
 
     goa = GOAnnotations(GOann, dbase=mgdatabase, hpsel=hpa)
 
-    goa.load_from_database()
-    goa.statistics()
+    # goa.load_from_database()
+    print goa.get_gene_for_geneonto('GO:0035770')
+    # goa.statistics()
 
     # goa.save_to_database()
     # print len(goa.GtoGO)
