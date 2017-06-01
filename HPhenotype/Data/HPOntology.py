@@ -39,7 +39,7 @@ class HPOntology(BioOntology):
         Creates the empty 
         :param pterm: 
         """
-        BioOntology.__init__(self, HPHonto, pheno_abno_c, dbase=dbase, inmemory=inmemory)
+        BioOntology.__init__(self, HPHonto, pheno_abno_c, dbase=dbase, inmemory=inmemory, nodesDB='PhenotypeOnto')
 
     def check_annotations(self):
         """
@@ -48,20 +48,21 @@ class HPOntology(BioOntology):
         :return: 
         """
         hpa = HPAnnotations(HPann, dbase=mgdatabase)
-        cpos = 0
-        cneg = 0
-        for d in self.down:
+        for d in self.terms_info:
             if hpa.exists_phenotype(d):
-                print '+', d, self.terms_info[d].level
-                cpos += 1
-            else:
-                print '-', d
-                cneg += 1
-        print cpos, cneg
+                self.terms_info[d].annotation = True
+
 
 
 if __name__ == '__main__':
-    o = HPOntology()
-    o.load_from_file()
-    o.compute_level()
-    o.check_annotations()
+    o = HPOntology(dbase=mgdatabase)
+    o.load_from_database()
+
+    lev = o.select_level(4)
+
+    for t in lev:
+        print t, len(o.recursive_descendants(t))
+    # o.compute_level()
+    # o.check_annotations()
+    # o.statistics()
+    # o.save_to_database()
