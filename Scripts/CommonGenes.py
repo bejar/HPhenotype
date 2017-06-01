@@ -33,7 +33,7 @@ __author__ = 'bejar'
 if __name__ == '__main__':
 
     levelph = 4
-    levelgn = 1
+    levelgn = 4
     ngene_threshold = 25
 
     # ---- Phenotype
@@ -69,9 +69,9 @@ if __name__ == '__main__':
     print 'Phenotype gene annotated %d' % len(gpheno)
 
     # -- Genotype
-    # goo = GOntology(GOonto, mole_func_c, dbase=mgdatabase, nodesDB='MoleFuncOnto')
+    goo = GOntology(GOonto, mole_func_c, dbase=mgdatabase, nodesDB='MoleFuncOnto')
     # goo = GOntology(GOonto, cell_comp_c, dbase=mgdatabase, nodesDB='CellCompOnto')
-    goo = GOntology(GOonto, biol_proc_c, dbase=mgdatabase, nodesDB='BiolProcOnto')
+    # goo = GOntology(GOonto, biol_proc_c, dbase=mgdatabase, nodesDB='BiolProcOnto')
     goo.load_from_database()
 
     goa = GOAnnotations(GOann, dbase=mgdatabase)
@@ -144,8 +144,10 @@ if __name__ == '__main__':
 
     # print ph_dmatrix.shape, ann_dmatrix.shape, gn_dmatrix.shape
 
-    m1 = np.concatenate((ph_dmatrix, ann_dmatrix), axis=1)
-    m2 = np.concatenate((ann_dmatrix.T, gn_dmatrix), axis=1)
+    simweight = 1.0
+
+    m1 = np.concatenate((ph_dmatrix, ann_dmatrix * simweight), axis=1)
+    m2 = np.concatenate((ann_dmatrix.T * simweight, gn_dmatrix), axis=1)
     mdist = np.concatenate((m1, m2), axis=0)
 
     # ax = sns.heatmap(mdist)
@@ -169,11 +171,16 @@ if __name__ == '__main__':
     offset = len(gpheno)
 
     nmdist = cdist(fdata[0:offset], fdata[offset:])
-    md = np.min(mdist)
-    print 'Min distance %f' % md
+    md = np.mean(nmdist)
+    print 'Min distance %f' % np.min(nmdist)
+    print 'Mean distance %f' % np.mean(nmdist)
 
     lgeno = ggeno.keys()
+    lpred = []
     for i, ph in enumerate(gpheno):
         j = np.argmin(nmdist[i])
-        # if nmdist[i,j] < (md *2):
-        print nmdist[i, j], hpo.terms_info[ph].label, '->', goo.terms_info[lgeno[j]].label
+        if nmdist[i, j] < (md / 2):
+            lpred.append((nmdist[i, j], hpo.terms_info[ph].label, '->', goo.terms_info[lgeno[j]].label))
+
+    for p in sorted(lpred):
+        print p
