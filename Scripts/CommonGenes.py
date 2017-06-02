@@ -190,16 +190,16 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
 if __name__ == '__main__':
 
     genonto = {1:'MoleFunc', 2:'CellComp', 3:'BiolProc'}
-    levelph = 2
-    levelgn = 3
-    phgen_th = 25
-    gngen_th = 10
+    levelph = 3
+    levelgn = 2
+    phgen_th = 10
+    gngen_th = 5
 
     # genotype= 1-Molecular Functions, 2-Cell Compounds, 3-Biological Processes
     genotype = 3
-    simweight=1
+    simweight = 1
 
-    lpred = ontologies_warping(levelph, levelgn, phgen_th, gngen_th, simweight=simweight, genotype=genotype, vis=False)
+    lpred = ontologies_warping(levelph, levelgn, phgen_th, gngen_th, simweight=simweight, genotype=genotype, vis=True)
     rfile = open(datapath + '/Results/Pheno%d-%s%d-GT%d-%d-SW%3.2f.txt'%
                  (levelph, genonto[genotype], levelgn, phgen_th, gngen_th, simweight), 'w')
     for d, p, g in sorted(lpred):
