@@ -24,18 +24,18 @@ from sklearn.manifold import MDS, Isomap, TSNE, SpectralEmbedding
 from scipy.spatial.distance import cdist, pdist
 
 from HPhenotype.Data import GOntology, HPOntology, GOAnnotations, HPAnnotations
-from HPhenotype.Config.Paths import HPann, GOann, GOonto
+from HPhenotype.Config.Paths import HPann, GOann, GOonto, datapath
 from HPhenotype.Ontology.Classes import biol_proc_c, cell_comp_c, mole_func_c
 from HPhenotype.Private.DBConfig import mgdatabase
 
 __author__ = 'bejar'
 
-if __name__ == '__main__':
+def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simweight=1.0, vis=False):
+    """
 
-    levelph = 4
-    levelgn = 4
-    ngene_threshold = 25
-
+    :param level:
+    :return:
+    """
     # ---- Phenotype
     hpo = HPOntology(dbase=mgdatabase)
     hpo.load_from_database()
@@ -63,15 +63,18 @@ if __name__ == '__main__':
     # for ph in pheno_level:
     #     print ph, hpo.terms_info[ph].label, len(gpheno[ph])
     for ph in pheno_level:
-        if len(gpheno[ph]) < ngene_threshold:
+        if len(gpheno[ph]) < phgene_th:
             del gpheno[ph]
 
     print 'Phenotype gene annotated %d' % len(gpheno)
 
     # -- Genotype
-    goo = GOntology(GOonto, mole_func_c, dbase=mgdatabase, nodesDB='MoleFuncOnto')
-    # goo = GOntology(GOonto, cell_comp_c, dbase=mgdatabase, nodesDB='CellCompOnto')
-    # goo = GOntology(GOonto, biol_proc_c, dbase=mgdatabase, nodesDB='BiolProcOnto')
+    if genotype == 1:
+        goo = GOntology(GOonto, mole_func_c, dbase=mgdatabase, nodesDB='MoleFuncOnto')
+    elif genotype == 2:
+        goo = GOntology(GOonto, cell_comp_c, dbase=mgdatabase, nodesDB='CellCompOnto')
+    else:
+        goo = GOntology(GOonto, biol_proc_c, dbase=mgdatabase, nodesDB='BiolProcOnto')
     goo.load_from_database()
 
     goa = GOAnnotations(GOann, dbase=mgdatabase)
@@ -98,7 +101,7 @@ if __name__ == '__main__':
     #     print gn, goo.terms_info[gn].label, len(ggeno[gn])
 
     for gn in geno_level:
-        if len(ggeno[gn]) < ngene_threshold:
+        if len(ggeno[gn]) < gngene_th:
             del ggeno[gn]
     print 'Genotype gene annotated %d' % len(ggeno)
 
@@ -144,7 +147,7 @@ if __name__ == '__main__':
 
     # print ph_dmatrix.shape, ann_dmatrix.shape, gn_dmatrix.shape
 
-    simweight = 1.0
+    # simweight = 1.0
 
     m1 = np.concatenate((ph_dmatrix, ann_dmatrix * simweight), axis=1)
     m2 = np.concatenate((ann_dmatrix.T * simweight, gn_dmatrix), axis=1)
@@ -161,12 +164,12 @@ if __name__ == '__main__':
 
     fdata = imap.fit_transform(fdata)
 
-    # color = ['r'] * len(gpheno) + ['b'] * len(ggeno)
-    #
-    # fig = plt.figure(figsize=(10, 10))
-    # ax = fig.add_subplot(111, projection='3d')
-    # plt.scatter(fdata[:, 0], fdata[:, 1], zs=fdata[:, 2], depthshade=False, s=100, c=color, cmap=plt.get_cmap('jet') )
-    # plt.show()
+    if vis:
+        color = ['r'] * len(gpheno) + ['b'] * len(ggeno)
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection='3d')
+        plt.scatter(fdata[:, 0], fdata[:, 1], zs=fdata[:, 2], depthshade=False, s=100, c=color, cmap=plt.get_cmap('jet') )
+        plt.show()
 
     offset = len(gpheno)
 
@@ -180,7 +183,26 @@ if __name__ == '__main__':
     for i, ph in enumerate(gpheno):
         j = np.argmin(nmdist[i])
         if nmdist[i, j] < (md / 2):
-            lpred.append((nmdist[i, j], hpo.terms_info[ph].label, '->', goo.terms_info[lgeno[j]].label))
+            lpred.append((nmdist[i, j], hpo.terms_info[ph].label, goo.terms_info[lgeno[j]].label))
 
-    for p in sorted(lpred):
-        print p
+    return lpred
+
+if __name__ == '__main__':
+
+    genonto = {1:'MoleFunc', 2:'CellComp', 3:'BiolProc'}
+    levelph = 2
+    levelgn = 3
+    phgen_th = 25
+    gngen_th = 10
+
+    # genotype= 1-Molecular Functions, 2-Cell Compounds, 3-Biological Processes
+    genotype = 3
+    simweight=1
+
+    lpred = ontologies_warping(levelph, levelgn, phgen_th, gngen_th, simweight=simweight, genotype=genotype, vis=False)
+    rfile = open(datapath + '/Results/Pheno%d-%s%d-GT%d-%d-SW%3.2f.txt'%
+                 (levelph, genonto[genotype], levelgn, phgen_th, gngen_th, simweight), 'w')
+    for d, p, g in sorted(lpred):
+        rfile.write('%3.5f | %s -> %s\n'%(d, p, g))
+
+    rfile.close()
