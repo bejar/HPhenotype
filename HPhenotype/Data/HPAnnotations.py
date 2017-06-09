@@ -146,7 +146,7 @@ class HPAnnotations:
         """
         if self.inmemory:
             if phen in self.PtoG:
-                return self.PtoG[phen]
+                return self.PtoG[phen][1]
             else:
                 raise Exception('Invalid phenotype')
         else:

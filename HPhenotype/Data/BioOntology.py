@@ -184,7 +184,8 @@ class BioOntology:
                             'label': self.terms_info[term].label,
                             'ascendants': self.terms_info[term].ascendants,
                             'descendants': self.terms_info[term].descendants,
-                            'annotation': self.terms_info[term].annotation
+                            'annotation': self.terms_info[term].annotation,
+                            'ngenes': self.terms_info[term].ngenes
                             })
 
     def load_from_database(self):
@@ -195,7 +196,7 @@ class BioOntology:
         client = MongoClient(self.dbase[0])
         db = client[self.dbase[1]]
         col = db[self.nodesDB]
-        res = col.find({}, {'node':1, 'level':1, 'ascendants': 1, 'descendants': 1, 'label': 1, 'annotation':1})
+        res = col.find({}, {'node':1, 'level':1, 'ascendants': 1, 'descendants': 1, 'label': 1, 'annotation':1, 'ngenes':1})
         self.terms_info = {}
 
         for r in res:
@@ -205,6 +206,7 @@ class BioOntology:
             tinfo.descendants = r['descendants']
             tinfo.label = r['label']
             tinfo.annotation = r['annotation']
+            tinfo.ngenes = r['ngenes']
             self.terms_info[r['node']] = tinfo
         self.inmemory = True
 
@@ -214,15 +216,17 @@ class BioOntology:
         :param level:
         :return:
         """
-
-        # if self.inmemory:
-        #     pass
-        # else:
-        client = MongoClient(self.dbase[0])
-        db = client[self.dbase[1]]
-        col = db[self.nodesDB]
-        res = col.find({'level': level}, {'node':1})
-        lterms = [v['node'] for v in res]
+        if self.inmemory:
+            lterms = []
+            for t in self.terms_info:
+                if self.terms_info[t].level == level:
+                    lterms.append(t)
+        else:
+            client = MongoClient(self.dbase[0])
+            db = client[self.dbase[1]]
+            col = db[self.nodesDB]
+            res = col.find({'level': level}, {'node':1})
+            lterms = [v['node'] for v in res]
 
         return lterms
 
@@ -241,6 +245,34 @@ class BioOntology:
             return lterms
         return list(set(i_recursive_descendants(term)))
 
+    def thresholded_border_terms(self, thres):
+        """
+        Select all the concepts that have more annotated genes than a threshold
+        and no descendant or ascendants are in result
+        :param thres:
+        :return:
+        """
+        term = str(self.parent_term).split('/')[-1].replace('_', ':')
+
+        return self._i_thresholded_border_terms(term, thres)
+
+    def _i_thresholded_border_terms(self, term, thres):
+        """
+        recursive immersion function of the corresponding function
+        :param term:
+        :param thres:
+        :return:
+        """
+        if self.terms_info[term].ngenes > thres:
+            ldesc = []
+            for d in self.terms_info[term].descendants:
+                ldesc.extend(self._i_thresholded_border_terms(d, thres))
+            if ldesc:
+                return ldesc
+            else:
+                return [term]
+        else:
+            return []
 
 
 if __name__ == '__main__':
@@ -251,7 +283,14 @@ if __name__ == '__main__':
 
     # onto.load_from_file(labels=True)
     onto.load_from_database()
-    onto.statistics()
+
+
+    border = onto.thresholded_border_terms(5)
+
+    for b in border:
+        print b, onto.terms_info[b].level, onto.terms_info[b].ngenes
+
+    # onto.statistics()
     # onto.save_to_database()
 
     # for o in onto.descendants:

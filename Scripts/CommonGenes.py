@@ -30,7 +30,8 @@ from HPhenotype.Private.DBConfig import mgdatabase
 
 __author__ = 'bejar'
 
-def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simweight=1.0, vis=False):
+
+def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simweight=1.0, vis=False, dm=False, nn=1):
     """
 
     :param level:
@@ -41,8 +42,8 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
     hpo.load_from_database()
     hpa = HPAnnotations(HPann, dbase=mgdatabase)
 
-    pheno_level = hpo.select_level(levelph)
-
+    # pheno_level = hpo.select_level(levelph)
+    pheno_level = hpo.thresholded_border_terms(phgene_th)
     dpheno = {}
     for ph in pheno_level:
         dpheno[ph] = hpo.recursive_descendants(ph)
@@ -79,7 +80,8 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
 
     goa = GOAnnotations(GOann, dbase=mgdatabase)
 
-    geno_level = goo.select_level(levelgn)
+    # geno_level = goo.select_level(levelgn)
+    geno_level = goo.thresholded_border_terms(gngene_th)
 
     dgeno = {}
     for gn in geno_level:
@@ -108,13 +110,20 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
     ann_dmatrix = np.zeros((len(gpheno), len(ggeno)))
 
     sim_threshold = 0.5
-
     count_thresh = 0
     for i, ph in enumerate(gpheno):
         for j, gn in enumerate(ggeno):
             ann_dmatrix[i, j] = float(len(gpheno[ph].intersection(ggeno[gn]))) / float(len(gpheno[ph].union(ggeno[gn])))
             if ann_dmatrix[i, j] > sim_threshold:
                 count_thresh += 1
+    if dm:
+        rfile = open(datapath + '/Results/DistPheno%d-%s%d-GT%d-%d-SW%3.2f.txt' %
+                     (levelph, genonto[genotype], levelgn, phgen_th, gngen_th, simweight), 'w')
+
+        for i, ph in enumerate(gpheno):
+            for j, gn in enumerate(ggeno):
+                rfile.write('%s, %s, %3.5f\n' % (ph, gn, ann_dmatrix[i, j]))
+        rfile.close()
 
     # print '%d Over threshold %3.2f' % (count_thresh, sim_threshold)
     # ax = sns.heatmap(ann_dmatrix)
@@ -168,7 +177,8 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
         color = ['r'] * len(gpheno) + ['b'] * len(ggeno)
         fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(111, projection='3d')
-        plt.scatter(fdata[:, 0], fdata[:, 1], zs=fdata[:, 2], depthshade=False, s=100, c=color, cmap=plt.get_cmap('jet') )
+        plt.scatter(fdata[:, 0], fdata[:, 1], zs=fdata[:, 2], depthshade=False, s=100, c=color,
+                    cmap=plt.get_cmap('jet'))
         plt.show()
 
     offset = len(gpheno)
@@ -182,27 +192,39 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
     lpred = []
     for i, ph in enumerate(gpheno):
         j = np.argmin(nmdist[i])
-        if nmdist[i, j] < (md / 2):
-            lpred.append((nmdist[i, j], hpo.terms_info[ph].label, goo.terms_info[lgeno[j]].label))
+        lgpred = []
+        for k in range(nn):
+            if nmdist[i, j] < (md / 2):
+                lgpred.append((nmdist[i, j], lgeno[j]))
+            nmdist[i, j] = 1000
+            j = np.argmin(nmdist[i])
+        if lgpred:
+            lpred.append((ph.label, lgpred))
 
-    return lpred
+    rfile = open(datapath + '/Results/Pheno-%s-GT%d-%d-SW%3.2f.txt' %
+                 (genonto[genotype], phgen_th, gngen_th, simweight), 'w')
+    for p, pred in sorted(lpred):
+        rfile.write('%d %d %s ->\n' % (hpo.terms_info[p].label, hpo.terms_info[p].level, hpo.terms_info[p].ngenes ) )
+        for d, g in pred:
+            rfile.write('     %3.5f | %d %d %s \n' % (d, goo.terms_info[g].label, goo.terms_info[g].level, goo.terms_info[g].ngenes))
+
+    rfile.close()
+
+
 
 if __name__ == '__main__':
 
-    genonto = {1:'MoleFunc', 2:'CellComp', 3:'BiolProc'}
-    levelph = 3
-    levelgn = 2
-    phgen_th = 10
-    gngen_th = 5
+    genonto = {1: 'MoleFunc', 2: 'CellComp', 3: 'BiolProc'}
+    levelph = 0
+    levelgn = 0
+    phgen_th = 25
+    gngen_th = 25
 
     # genotype= 1-Molecular Functions, 2-Cell Compounds, 3-Biological Processes
     genotype = 3
-    simweight = 1
+    simweight = 1.5
+    npred = 3
 
-    lpred = ontologies_warping(levelph, levelgn, phgen_th, gngen_th, simweight=simweight, genotype=genotype, vis=True)
-    rfile = open(datapath + '/Results/Pheno%d-%s%d-GT%d-%d-SW%3.2f.txt'%
-                 (levelph, genonto[genotype], levelgn, phgen_th, gngen_th, simweight), 'w')
-    for d, p, g in sorted(lpred):
-        rfile.write('%3.5f | %s -> %s\n'%(d, p, g))
+    ontologies_warping(levelph, levelgn, phgen_th, gngen_th, simweight=simweight, genotype=genotype, vis=True,
+                               dm=False, nn=npred)
 
-    rfile.close()

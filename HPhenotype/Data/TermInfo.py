@@ -29,6 +29,7 @@ class TermInfo:
     ascendants = None
     label = None
     annotation = False
+    ngenes = None
 
     def __init__(self, name):
         """
@@ -41,6 +42,7 @@ class TermInfo:
         self.ascendants = []
         self.descendants = []
         self.label = ''
+        self.ngenes = 0
 
     def add_ascendant(self, name):
         """
@@ -96,5 +98,6 @@ class TermInfo:
         res += 'L= %d\n' % self.level
         res += 'A= %s\n' % str(self.ascendants)
         res += 'D= %s\n' % str(self.descendants)
+        res += 'NG= %d\n' % self.ngenes
         return res
 
