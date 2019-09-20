@@ -17,8 +17,8 @@ __init__.py
 
 """
 
-from .Paths import GOannotations, GOonto, HPHonto
+from .Paths import GOann, GOonto, HPHonto
 
 __author__ = 'bejar'
 
-__all__ = ['GOonto', 'GOannotations', 'HPHonto']
+__all__ = ['GOonto', 'GOann', 'HPHonto']

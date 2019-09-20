@@ -24,4 +24,5 @@ datapath = '/home/bejar/storage/Data/HPheno/'
 HPHonto = datapath + '/ontologies/hp.owl.gz'
 GOonto =  datapath + '/ontologies/go.owl.gz'
 
-GOannotations = datapath + '/annotations/goa_human.gaf'
+GOann = datapath + '/annotations/goa_human.gaf'
+HPann = datapath + '/annotations/genes_to_phenotype.txt'

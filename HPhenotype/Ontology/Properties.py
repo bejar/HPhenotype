@@ -22,3 +22,4 @@ from HPhenotype.Ontology.Namespaces import oboInOwl
 __author__ = 'bejar'
 
 has_OBO_ns = oboInOwl.hasOBONamespace
+obo_id = oboInOwl.id
