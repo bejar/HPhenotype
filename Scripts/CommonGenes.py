@@ -31,7 +31,7 @@ from HPhenotype.Private.DBConfig import mgdatabase
 __author__ = 'bejar'
 
 
-def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simweight=1.0, vis=False, dm=False, nn=1):
+def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simweight=1.0, vis=False, dm=False, nn=1, ndim=3):
     """
 
     :param level:
@@ -169,7 +169,7 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
     # imap = MDS(n_components=3, dissimilarity='precomputed')
 
     fdata = mdist
-    imap = SpectralEmbedding(n_components=3, affinity='precomputed')
+    imap = SpectralEmbedding(n_components=ndim, affinity='precomputed')
 
     fdata = imap.fit_transform(fdata)
 
@@ -199,14 +199,15 @@ def ontologies_warping(levelph, levelgn, phgene_th, gngene_th, genotype=3, simwe
             nmdist[i, j] = 1000
             j = np.argmin(nmdist[i])
         if lgpred:
-            lpred.append((ph.label, lgpred))
+            lpred.append((hpo.terms_info[ph].label, ph, lgpred))
 
     rfile = open(datapath + '/Results/Pheno-%s-GT%d-%d-SW%3.2f.txt' %
                  (genonto[genotype], phgen_th, gngen_th, simweight), 'w')
-    for p, pred in sorted(lpred):
-        rfile.write('%d %d %s ->\n' % (hpo.terms_info[p].label, hpo.terms_info[p].level, hpo.terms_info[p].ngenes ) )
+
+    for _, p, pred in sorted(lpred):
+        rfile.write('%d %d %s ->\n' % (hpo.terms_info[p].level, hpo.terms_info[p].ngenes, hpo.terms_info[p].label))
         for d, g in pred:
-            rfile.write('     %3.5f | %d %d %s \n' % (d, goo.terms_info[g].label, goo.terms_info[g].level, goo.terms_info[g].ngenes))
+            rfile.write('     %3.5f | %d %d %s \n' % (d, goo.terms_info[g].level, goo.terms_info[g].ngenes, goo.terms_info[g].label))
 
     rfile.close()
 
@@ -217,7 +218,7 @@ if __name__ == '__main__':
     genonto = {1: 'MoleFunc', 2: 'CellComp', 3: 'BiolProc'}
     levelph = 0
     levelgn = 0
-    phgen_th = 25
+    phgen_th = 50
     gngen_th = 25
 
     # genotype= 1-Molecular Functions, 2-Cell Compounds, 3-Biological Processes
@@ -226,5 +227,5 @@ if __name__ == '__main__':
     npred = 3
 
     ontologies_warping(levelph, levelgn, phgen_th, gngen_th, simweight=simweight, genotype=genotype, vis=True,
-                               dm=False, nn=npred)
+                               dm=False, nn=npred, ndim=5)
 
